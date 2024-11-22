@@ -1,4 +1,5 @@
 from django.core.cache import cache
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
@@ -8,6 +9,7 @@ from .tasks import send_email_notification
 
 
 class CommentViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = Comment.objects.all().order_by('-created_at')
     serializer_class = CommentSerializer
 
