@@ -11,6 +11,12 @@
 ```bash
 python manage.py runserver
 ```
+
+або
+
+```bash
+uvicorn backend.asgi:application --host 127.0.0.1 --port 8000
+```
 ### Створення нової міграції
 Генерує файл міграції на основі змін у моделях.
 

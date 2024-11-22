@@ -2,6 +2,8 @@ from django.core.cache import cache
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 
 from .models import Comment
 from .serializers import CommentSerializer
@@ -15,18 +17,36 @@ class CommentViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         comment = serializer.save()
+
         # Відправляємо email
         send_email_notification.delay(
             email=comment.email,
             message=f"Hello,\n"
                     f"\n"
-                    f"Your comment {comment.text} has been successfully posted on our website.\n"
+                    f"Your comment '{comment.text}' has been successfully posted on our website.\n"
                     f"\n"
                     f"Thank you for your participation!\n"
                     f"\n"
                     f"Best regards,\n"
                     f"Support Team",
-        )  # Викликаємо завдання Celery
+        )
+
+        # Відправка повідомлення через WebSocket
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            'comments',
+            {
+                'type': 'comment_message',
+                'message': {
+                    'id': comment.id,
+                    'user_name': comment.user_name,
+                    'email': comment.email,
+                    'text': comment.text,
+                    'created_at': comment.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    'parent_id': comment.parent.id if comment.parent else None,
+                }
+            }
+        )
 
     def list(self, request, *args, **kwargs):
         # Ключ для кешу
