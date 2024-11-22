@@ -9,8 +9,14 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-
+import os
 from pathlib import Path
+
+from environs import Env
+
+env = Env()
+env.read_env()
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,12 +25,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-l(els)6g^7(2imuv2-)ccze$mqu9fr68b6mt_mw^m&q2kr_^e+'
+# SECRET_KEY = 'django-insecure-l(els)6g^7(2imuv2-)ccze$mqu9fr68b6mt_mw^m&q2kr_^e+'
+SECRET_KEY = env.str('DJANGO_SECRET_KEY', 'fallback-secret-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env.bool('DJANGO_DEBUG', False)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS', ['localhost'])
 
 # Application definition
 
@@ -75,11 +82,11 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'dzencode_db',
-        'USER': 'amol',
-        'PASSWORD': 'mypassword',  # TODO: винести в .env
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': env.str('POSTGRES_DB'),
+        'USER': env.str('POSTGRES_USER'),
+        'PASSWORD': env.str('POSTGRES_PASSWORD'),
+        'HOST': env.str('POSTGRES_HOST', 'localhost'),
+        'PORT': env.int('POSTGRES_PORT', 5432),
     }
 }
 
@@ -121,3 +128,25 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Cache (Redis)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': env.str('REDIS_URL'),
+    }
+}
+
+# Celery configuration
+CELERY_BROKER_URL = env.str('REDIS_URL')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = env.str('EMAIL_HOST')
+EMAIL_PORT = env.int('EMAIL_PORT')
+# EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=False)
+EMAIL_USE_SSL = env.bool("EMAIL_USE_SSL")
+EMAIL_HOST_USER = env.str('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = env.str('EMAIL_HOST_PASSWORD')
