@@ -20,6 +20,7 @@ channels = "^4.2.0"
 channels-redis = "^4.2.1"
 uvicorn = {extras = ["standard"], version = "^0.32.1"}
 websockets = "^14.1"
+django-cors-headers = "^4.6.0"
 
 
 [build-system]
